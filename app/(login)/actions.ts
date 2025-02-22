@@ -150,7 +150,7 @@ const createUser = async (email: string, password: string) => {
     }
   }
 
-  return { success: true, message: "User created." };
+  return { success: true, data, message: "User created." };
 };
 
 const handleInvitation = async (inviteId: string, email: string) => {
@@ -196,7 +196,9 @@ const createTeam = async (email: string) => {
   return { success: true, teamId: createdTeam.id, userRole: 'owner' };
 };
 
-const addTeamMember = async (userId: number, teamId: number, userRole: string) => {
+const addTeamMember = async (userId: string, teamId: number, userRole: string) => {
+
+  // check if user is created
   const newTeamMember: NewTeamMember = {
     userId,
     teamId,

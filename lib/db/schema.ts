@@ -10,15 +10,6 @@ import {
 import { relations } from 'drizzle-orm';
 import { authUsers } from 'drizzle-orm/supabase';
 
-
-
-/* drizzle-ignore */
-// export const authUsers = pgTable("auth.users", {
-//   id: uuid("id").primaryKey(),
-//   email: varchar("email", { length: 255 }).notNull(),
-//   createdAt: timestamp("created_at").notNull().defaultNow(),
-// });
-
 export const userProfiles = pgTable("user_profiles", {
   id: serial("id").primaryKey(),
   userId: uuid("user_id")
