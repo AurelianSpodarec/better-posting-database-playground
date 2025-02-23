@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { signIn } from "../actions"
+import { signIn } from "../../../lib/db/actions/actions"
 
 //TODO: Animate the UI and change the url when doing so without reloading -  window.history.pushState({}, '', '/new-url');
 

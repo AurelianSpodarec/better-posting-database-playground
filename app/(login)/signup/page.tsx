@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { signUp } from "../actions"
+import { signUp } from "../../../lib/db/actions/actions"
 
 const dataBenefits = [
   {

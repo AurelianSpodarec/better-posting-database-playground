@@ -7,17 +7,16 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '@/lib/db/drizzle';
 
 import {
-  User,
-  teams,
-  teamMembers,
-  activityLogs,
+  TeamsTable,
+  TeamMembersTable,
+  ActivityLogsTable,
   type NewUser,
   type NewTeam,
   type NewTeamMember,
   type NewActivityLog,
   ActivityType,
-  invitations,
-  userProfiles,
+  InvitationsTable,
+  UserProfilesTable,
 } from '@/lib/db/schema';
 
 import crypto from "crypto";
@@ -111,7 +110,7 @@ const checkExistingUser = async (email: string) => {
 export const createUserProfile = async (userId: string, email: string) => {
   const avatar = await checkGravatarExists(email);
 
-  await db.insert(userProfiles).values({
+  await db.insert(UserProfilesTable).values({
     userId,
     avatar, // Will be NULL if no Gravatar exists
     role: "member",
@@ -156,12 +155,12 @@ const createUser = async (email: string, password: string) => {
 const handleInvitation = async (inviteId: string, email: string) => {
   const [invitation] = await db
     .select()
-    .from(invitations)
+    .from(InvitationsTable)
     .where(
       and(
-        eq(invitations.id, parseInt(inviteId)),
-        eq(invitations.email, email),
-        eq(invitations.status, 'pending'),
+        eq(InvitationsTable.id, parseInt(inviteId)),
+        eq(InvitationsTable.email, email),
+        eq(InvitationsTable.status, 'pending'),
       ),
     )
     .limit(1);
@@ -171,9 +170,9 @@ const handleInvitation = async (inviteId: string, email: string) => {
   }
 
   await db
-    .update(invitations)
+    .update(InvitationsTable)
     .set({ status: 'accepted' })
-    .where(eq(invitations.id, invitation.id));
+    .where(eq(InvitationsTable.id, invitation.id));
 
   return {
     success: true,
@@ -187,7 +186,7 @@ const createTeam = async (email: string) => {
     name: `${email}'s Team`,
   };
 
-  const [createdTeam] = await db.insert(teams).values(newTeam).returning();
+  const [createdTeam] = await db.insert(TeamsTable).values(newTeam).returning();
 
   if (!createdTeam) {
     return { success: false, error: 'Failed to create team. Please try again.' };
@@ -205,7 +204,7 @@ const addTeamMember = async (userId: string, teamId: number, userRole: string) =
     role: userRole,
   };
 
-  await db.insert(teamMembers).values(newTeamMember);
+  await db.insert(TeamMembersTable).values(newTeamMember);
 };
 
 // ========================================================================
@@ -293,7 +292,7 @@ async function logActivity(
     action: type,
     ipAddress: ipAddress || '',
   };
-  await db.insert(activityLogs).values(newActivity);
+  await db.insert(ActivityLogsTable).values(newActivity);
 }
 
 const signInSchema = z.object({
@@ -307,11 +306,11 @@ const signInSchema = z.object({
 //   const userWithTeam = await db
 //     .select({
 //       user: users,
-//       team: teams,
+//       team: TeamsTable,
 //     })
 //     .from(users)
-//     .leftJoin(teamMembers, eq(users.id, teamMembers.userId))
-//     .leftJoin(teams, eq(teamMembers.teamId, teams.id))
+//     .leftJoin(TeamMembersTable, eq(users.id, TeamMembersTable.userId))
+//     .leftJoin(TeamsTable, eq(TeamMembersTable.teamId, TeamsTable.id))
 //     .where(eq(users.email, email))
 //     .limit(1);
 
@@ -397,18 +396,18 @@ const signUpSchema = z.object({
 
 //   let teamId: number;
 //   let userRole: string;
-//   let createdTeam: typeof teams.$inferSelect | null = null;
+//   let createdTeam: typeof TeamsTable.$inferSelect | null = null;
 
 //   if (inviteId) {
 //     // Check if there's a valid invitation
 //     const [invitation] = await db
 //       .select()
-//       .from(invitations)
+//       .from(InvitationsTable)
 //       .where(
 //         and(
-//           eq(invitations.id, parseInt(inviteId)),
-//           eq(invitations.email, email),
-//           eq(invitations.status, 'pending'),
+//           eq(InvitationsTable.id, parseInt(inviteId)),
+//           eq(InvitationsTable.email, email),
+//           eq(InvitationsTable.status, 'pending'),
 //         ),
 //       )
 //       .limit(1);
@@ -418,16 +417,16 @@ const signUpSchema = z.object({
 //       userRole = invitation.role;
 
 //       await db
-//         .update(invitations)
+//         .update(InvitationsTable)
 //         .set({ status: 'accepted' })
-//         .where(eq(invitations.id, invitation.id));
+//         .where(eq(InvitationsTable.id, invitation.id));
 
 //       await logActivity(teamId, createdUser.id, ActivityType.ACCEPT_INVITATION);
 
 //       [createdTeam] = await db
 //         .select()
-//         .from(teams)
-//         .where(eq(teams.id, teamId))
+//         .from(TeamsTable)
+//         .where(eq(TeamsTable.id, teamId))
 //         .limit(1);
 //     } else {
 //       return { error: 'Invalid or expired invitation.', email, password };
@@ -438,7 +437,7 @@ const signUpSchema = z.object({
 //       name: `${email}'s Team`,
 //     };
 
-//     [createdTeam] = await db.insert(teams).values(newTeam).returning();
+//     [createdTeam] = await db.insert(TeamsTable).values(newTeam).returning();
 
 //     if (!createdTeam) {
 //       return {
@@ -461,7 +460,7 @@ const signUpSchema = z.object({
 //   };
 
 //   await Promise.all([
-//     db.insert(teamMembers).values(newTeamMember),
+//     db.insert(TeamMembersTable).values(newTeamMember),
 //     logActivity(teamId, createdUser.id, ActivityType.SIGN_UP),
 //     // setSession(createdUser),
 //   ]);
@@ -599,11 +598,11 @@ const deleteAccountSchema = z.object({
 
 //     if (userWithTeam?.teamId) {
 //       await db
-//         .delete(teamMembers)
+//         .delete(TeamMembersTable)
 //         .where(
 //           and(
-//             eq(teamMembers.userId, user.id),
-//             eq(teamMembers.teamId, userWithTeam.teamId),
+//             eq(TeamMembersTable.userId, user.id),
+//             eq(TeamMembersTable.teamId, userWithTeam.teamId),
 //           ),
 //         );
 //     }
@@ -633,12 +632,12 @@ const deleteAccountSchema = z.object({
 //   },
 // );
 
-const removeTeamMemberSchema = z.object({
+const removeTeamMembersTablechema = z.object({
   memberId: z.number(),
 });
 
 export const removeTeamMember = validatedActionWithUser(
-  removeTeamMemberSchema,
+  removeTeamMembersTablechema,
   async (data, _, user) => {
     const { memberId } = data;
     const userWithTeam = await getUserWithTeam(user.id);
@@ -648,11 +647,11 @@ export const removeTeamMember = validatedActionWithUser(
     }
 
     await db
-      .delete(teamMembers)
+      .delete(TeamMembersTable)
       .where(
         and(
-          eq(teamMembers.id, memberId),
-          eq(teamMembers.teamId, userWithTeam.teamId),
+          eq(TeamMembersTable.id, memberId),
+          eq(TeamMembersTable.teamId, userWithTeam.teamId),
         ),
       );
 
@@ -666,13 +665,13 @@ export const removeTeamMember = validatedActionWithUser(
   },
 );
 
-const inviteTeamMemberSchema = z.object({
+const inviteTeamMembersTablechema = z.object({
   email: z.string().email('Invalid email address'),
   role: z.enum(['member', 'owner']),
 });
 
 // export const inviteTeamMember = validatedActionWithUser(
-//   inviteTeamMemberSchema,
+//   inviteTeamMembersTablechema,
 //   async (data, _, user) => {
 //     const { email, role } = data;
 //     const userWithTeam = await getUserWithTeam(user.id);
@@ -684,11 +683,11 @@ const inviteTeamMemberSchema = z.object({
 //     const existingMember = await db
 //       .select()
 //       .from(users)
-//       .leftJoin(teamMembers, eq(users.id, teamMembers.userId))
+//       .leftJoin(TeamMembersTable, eq(users.id, TeamMembersTable.userId))
 //       .where(
 //         and(
 //           eq(users.email, email),
-//           eq(teamMembers.teamId, userWithTeam.teamId),
+//           eq(TeamMembersTable.teamId, userWithTeam.teamId),
 //         ),
 //       )
 //       .limit(1);
@@ -700,12 +699,12 @@ const inviteTeamMemberSchema = z.object({
 //     // Check if there's an existing invitation
 //     const existingInvitation = await db
 //       .select()
-//       .from(invitations)
+//       .from(InvitationsTable)
 //       .where(
 //         and(
-//           eq(invitations.email, email),
-//           eq(invitations.teamId, userWithTeam.teamId),
-//           eq(invitations.status, 'pending'),
+//           eq(InvitationsTable.email, email),
+//           eq(InvitationsTable.teamId, userWithTeam.teamId),
+//           eq(InvitationsTable.status, 'pending'),
 //         ),
 //       )
 //       .limit(1);
@@ -715,7 +714,7 @@ const inviteTeamMemberSchema = z.object({
 //     }
 
 //     // Create a new invitation
-//     await db.insert(invitations).values({
+//     await db.insert(InvitationsTable).values({
 //       teamId: userWithTeam.teamId,
 //       email,
 //       role,
